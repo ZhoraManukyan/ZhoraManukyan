@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd
 from user import *
 
@@ -35,7 +36,63 @@ class PersonalFinanceManager:
         else:
             print(f"User '{username}' not found.")
 
+    def create_users_data_csv(self, filename='users_data.csv'):
+        data = []
 
+        for user in self.users:
+            user_id = user.get_user_id()
+            username = user.username
+            total_income = user.get_total_income()
+            total_expenses = user.get_total_expenses()
+            savings = user.get_savings()
+
+            for transaction in user.transactions:
+                amount, date, description = transaction.get_attributes()
+                income = amount if isinstance(transaction, Income) else 0
+                expense = amount if isinstance(transaction, Expense) else 0
+
+                data.append([user_id, username, date, income, expense, savings])
+
+        columns = ["id", "user_id", "date", "income", "expense", "savings"]
+        transaction_df = pd.DataFrame(data, columns=columns)
+        print(transaction_df)
+        
+        transaction_df.to_csv(filename, index=False)
+
+        sns.set_theme()
+        custom_palette = sns.color_palette("Set3", len(transaction_df['date'].unique()))
+        
+        user_ids = transaction_df['user_id'].unique()
+        fig, axs = plt.subplots(len(user_ids), 3, figsize=(7, 5 * len(user_ids)))
+
+        for i, user_id in enumerate(user_ids):
+            user_data = transaction_df[transaction_df['user_id'] == user_id]
+
+            sns.barplot(x='date', y='income', data=user_data, ax=axs[i, 0], color='green')
+            axs[i, 0].set_title(f'Total Income (User ID: {user_id})')
+
+            sns.barplot(x='date', y='expense', data=user_data, ax=axs[i, 1], color='red')
+            axs[i, 1].set_title(f'Total Expenses (User ID: {user_id})')
+
+            sns.lineplot(x='date', y='savings', data=user_data, ax=axs[i, 2], marker='o')
+            axs[i, 2].set_title(f'Savings (User ID: {user_id})')
+
+        plt.tight_layout()
+        plt.show()
+
+        for user_id in user_ids:
+            user_data = transaction_df[transaction_df['user_id'] == user_id]
+            
+            total_expenses = user_data.groupby('date')['expense'].sum().reset_index()
+            labels = total_expenses['date']
+            
+            plt.figure(figsize=(6, 6))
+            plt.pie(total_expenses['expense'], labels=labels, autopct='%1.1f%%', startangle=140, colors=custom_palette)
+            plt.title(f'Expense Distribution for User ID: {user_id}')
+            plt.show()
+
+
+# Examples
 pf_manager = PersonalFinanceManager()
 # Creating a user
 hovsep = pf_manager.create_user(123, "Hovsep")
@@ -45,36 +102,52 @@ araik = pf_manager.create_user(456, "Araik")
 
 # Creating transactions
 income1 = Income(1000, "2023-01-01", "Salary")
-expense1 = Expense(500, "2023-01-05", "Food")
-one_time_purchase1 = OneTimePurchase(200, "2023-01-10", "Electronics")
+expense1 = Expense(500, "2023-01-06", "Food")
+one_time_purchase1 = OneTimePurchase(200, "2023-01-11", "Electronics")
 
-income2 = Income(1200, "2023-01-01", "Salary")
-expense2 = Expense(700, "2023-01-05", "Basseyn")
-one_time_purchase2 = OneTimePurchase(600, "2023-01-10", "Clothes")
+income2 = Income(1200, "2023-01-02", "Salary")
+expense2 = Expense(700, "2023-01-07", "Basseyn")
+one_time_purchase2 = OneTimePurchase(600, "2023-01-13", "Clothes")
 
-income3 = Income(1600, "2023-01-01", "Salary")
-expense3 = Expense(600, "2023-01-05", "Food")
-one_time_purchase3 = OneTimePurchase(500, "2023-01-10", "Electronics")
+income3 = Income(1600, "2023-01-03", "Salary")
+expense3 = Expense(600, "2023-01-08", "Food")
+one_time_purchase3 = OneTimePurchase(500, "2023-01-12", "Electronics")
 
-income4 = Income(1200, "2023-01-01", "Salary")
-expense4 = Expense(700, "2023-01-05", "Basseyn")
-one_time_purchase4 = OneTimePurchase(600, "2023-01-10", "Clothes")
+income4 = Income(1200, "2023-01-04", "Salary")
+expense4 = Expense(700, "2023-01-09", "Basseyn")
+one_time_purchase4 = OneTimePurchase(600, "2023-01-14", "Clothes")
 # Adding transactions to the hovsep and sona
 hovsep.add_transaction(income1)
 hovsep.add_transaction(expense1)
 hovsep.add_transaction(one_time_purchase1)
 
+hovsep.add_transaction(income3)
+hovsep.add_transaction(expense3)
+hovsep.add_transaction(one_time_purchase3)
+
 pf_manager.add_transaction_to_user("Sona", income2)
 pf_manager.add_transaction_to_user("Sona", expense2)
 pf_manager.add_transaction_to_user("Sona", one_time_purchase2)
+
+pf_manager.add_transaction_to_user("Sona", income4)
+pf_manager.add_transaction_to_user("Sona", expense4)
+pf_manager.add_transaction_to_user("Sona", one_time_purchase4)
 
 zhora.add_transaction(income3)
 zhora.add_transaction(expense3)
 zhora.add_transaction(one_time_purchase3)
 
+zhora.add_transaction(income2)
+zhora.add_transaction(expense2)
+zhora.add_transaction(one_time_purchase2)
+
 pf_manager.add_transaction_to_user("Araik", income4)
 pf_manager.add_transaction_to_user("Araik", expense4)
 pf_manager.add_transaction_to_user("Araik", one_time_purchase4)
+
+pf_manager.add_transaction_to_user("Araik", income1)
+pf_manager.add_transaction_to_user("Araik", expense1)
+pf_manager.add_transaction_to_user("Araik", one_time_purchase1)
 
 # Getting total income, expenses, and savings for the user
 print("HOVSEP")
@@ -116,59 +189,5 @@ print("\nUsers's ids: ", id_s)
 print("Users transactions:", transactions)
 print("\n")
 
-data = []
-
-# Iterating amen user-i ev ir transactions-i vra
-for user in pf_manager.users:
-    user_id = user.get_user_id()
-    username = user.username
-    total_income = user.get_total_income()
-    total_expenses = user.get_total_expenses()
-    savings = user.get_savings()
-
-    # yuraqanchyur transactioni hamar avelacnum enq datanery(tvyalnery)
-    for transaction in user.transactions:
-        amount, date, description = transaction.get_attributes()
-        income = amount if isinstance(transaction, Income) else 0
-        expense = amount if isinstance(transaction, Expense) else 0
-
-        # tvyalnery  avelacnum enq listum
-        data.append([user_id, username, date, income, expense, savings])
-
-# stexcum enq  DataFrame
-columns = ["id", "user_id", "date", "income", "expense", "savings"]
-transaction_df = pd.DataFrame(data, columns=columns)
-
-# the DataFrame
-print(transaction_df)
-transaction_df.to_csv('users_data.csv',
-                      index=False)
-
-transaction_df = pd.read_csv('users_data.csv')
-user_ids = transaction_df['user_id'].unique()
-fig, axs = plt.subplots(len(user_ids), 3, figsize=(15, 5 * len(user_ids)))
-
-for i, user_id in enumerate(user_ids):
-    user_data = transaction_df[transaction_df['user_id'] == user_id]
-
-    # Plot Total Income
-    axs[i, 0].bar(user_data['date'], user_data['income'], color='green')
-    axs[i, 0].set_title(f'Total Income (User ID: {user_id})')
-    axs[i, 0].set_xlabel('Date')
-    axs[i, 0].set_ylabel('Income')
-
-    # Plot Total Expenses
-    axs[i, 1].bar(user_data['date'], user_data['expense'], color='red')
-    axs[i, 1].set_title(f'Total Expenses (User ID: {user_id})')
-    axs[i, 1].set_xlabel('Date')
-    axs[i, 1].set_ylabel('Expenses')
-
-    # Plot Savings
-    axs[i, 2].plot(user_data['date'], user_data['savings'], marker='o', linestyle='-')
-    axs[i, 2].set_title(f'Savings (User ID: {user_id})')
-    axs[i, 2].set_xlabel('Date')
-    axs[i, 2].set_ylabel('Savings')
-
-plt.tight_layout()
-plt.show()
-
+# Visualizing data
+pf_manager.create_users_data_csv('users_data.csv')
